@@ -432,5 +432,270 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-    // Real-time analytics would be implemented here
+    static datetime lastBarTime = 0;
+    static double lastPrice = 0;
+    static long lastVolume = 0;
+    
+    // Get current market data
+    double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    long currentVolume = SymbolInfoInteger(_Symbol, SYMBOL_VOLUME);
+    datetime currentTime = TimeCurrent();
+    
+    // Check if we have a new tick with volume change
+    if(currentVolume != lastVolume)
+    {
+        // 1. Real-time Volume Distribution Update
+        UpdateVolumeDistribution(currentPrice, currentVolume - lastVolume);
+        
+        // 2. Real-time POC Calculation
+        double newPOC = CalculateRealTimePOC();
+        
+        // 3. Volume Anomaly Detection
+        if(DetectVolumeAnomaly(currentVolume - lastVolume))
+        {
+            Alert("🚨 Volume Anomaly Detected at ", DoubleToString(currentPrice, _Digits));
+            SendNotification("High Volume Alert: " + _Symbol + " at " + DoubleToString(currentPrice, _Digits));
+        }
+        
+        // 4. Market Regime Analysis Update
+        ENUM_MARKET_REGIME currentRegime = AnalyzeMarketRegime();
+        static ENUM_MARKET_REGIME lastRegime = REGIME_RANGE;
+        
+        if(currentRegime != lastRegime)
+        {
+            string regimeText = EnumToString(currentRegime);
+            Comment("📊 Market Regime Changed to: ", regimeText);
+            lastRegime = currentRegime;
+        }
+        
+        // 5. Dynamic Support/Resistance Update
+        UpdateDynamicLevels(currentPrice);
+        
+        // 6. Real-time Statistics
+        CalculateRealTimeStatistics();
+        
+        lastVolume = currentVolume;
+    }
+    
+    // Price movement analysis (every tick)
+    if(currentPrice != lastPrice)
+    {
+        // Update price momentum
+        UpdatePriceMomentum(currentPrice);
+        
+        // Check for significant price moves
+        double priceChange = MathAbs(currentPrice - lastPrice) / _Point;
+        if(priceChange >= 10) // Configurable threshold
+        {
+            AnalyzePriceJump(currentPrice, lastPrice);
+        }
+        
+        lastPrice = currentPrice;
+    }
+    
+    // New bar detection and analysis
+    datetime barTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+    if(barTime != lastBarTime)
+    {
+        OnNewBar();
+        lastBarTime = barTime;
+    }
+    
+    // Update visual elements if needed
+    static int tickCounter = 0;
+    tickCounter++;
+    
+    // Throttle updates for performance (every 10 ticks)
+    if(tickCounter % 10 == 0)
+    {
+        UpdateVisualElements();
+        RefreshAnalyticsPanel();
+    }
+}
+
+// Supporting functions for real-time analytics
+void UpdateVolumeDistribution(double price, long volume)
+{
+    // Find price level bucket
+    int priceLevel = (int)MathRound(price / _Point);
+    
+    // Update volume at this price level
+    // This would integrate with the main Market Profile volume tracking
+    
+    if(GlobalVariableCheck("MP_Volume_" + IntegerToString(priceLevel)))
+    {
+        double currentVol = GlobalVariableGet("MP_Volume_" + IntegerToString(priceLevel));
+        GlobalVariableSet("MP_Volume_" + IntegerToString(priceLevel), currentVol + volume);
+    }
+    else
+    {
+        GlobalVariableSet("MP_Volume_" + IntegerToString(priceLevel), volume);
+    }
+}
+
+bool DetectVolumeAnomaly(long volumeDelta)
+{
+    static double volumeHistory[100];
+    static int historyIndex = 0;
+    
+    // Store volume in circular buffer
+    volumeHistory[historyIndex] = (double)volumeDelta;
+    historyIndex = (historyIndex + 1) % 100;
+    
+    // Calculate average and standard deviation
+    double sum = 0, sumSquares = 0;
+    for(int i = 0; i < 100; i++)
+    {
+        sum += volumeHistory[i];
+        sumSquares += volumeHistory[i] * volumeHistory[i];
+    }
+    
+    double average = sum / 100;
+    double variance = (sumSquares / 100) - (average * average);
+    double stdDev = MathSqrt(variance);
+    
+    // Detect anomaly (volume > 2 standard deviations above average)
+    return (volumeDelta > average + (2 * stdDev));
+}
+
+ENUM_MARKET_REGIME AnalyzeMarketRegime()
+{
+    // Simple regime detection based on recent price action
+    double high = iHigh(_Symbol, PERIOD_M5, iHighest(_Symbol, PERIOD_M5, MODE_HIGH, 20, 1));
+    double low = iLow(_Symbol, PERIOD_M5, iLowest(_Symbol, PERIOD_M5, MODE_LOW, 20, 1));
+    double range = high - low;
+    double avgRange = iATR(_Symbol, PERIOD_M5, 14, 1);
+    
+    // Get recent closes for trend analysis
+    double close1 = iClose(_Symbol, PERIOD_M5, 1);
+    double close10 = iClose(_Symbol, PERIOD_M5, 10);
+    double close20 = iClose(_Symbol, PERIOD_M5, 20);
+    
+    double trendStrength = MathAbs(close1 - close20) / (20 * _Point);
+    
+    if(range > avgRange * 1.5 && trendStrength < avgRange * 0.5)
+        return REGIME_VOLATILE;
+    else if(trendStrength > avgRange)
+        return (close1 > close20) ? REGIME_TRENDING_UP : REGIME_TRENDING_DOWN;
+    else
+        return REGIME_RANGE;
+}
+
+void UpdateDynamicLevels(double currentPrice)
+{
+    // Update key levels based on current market profile
+    double poc = CalculateRealTimePOC();
+    
+    // Store dynamic levels in global variables for other indicators
+    GlobalVariableSet("MP_Dynamic_POC", poc);
+    GlobalVariableSet("MP_Current_Price", currentPrice);
+    GlobalVariableSet("MP_Last_Update", TimeCurrent());
+}
+
+void CalculateRealTimeStatistics()
+{
+    static int statsCounter = 0;
+    statsCounter++;
+    
+    // Calculate every 50 ticks to avoid performance issues
+    if(statsCounter % 50 == 0)
+    {
+        // Calculate current session statistics
+        double sessionHigh = iHigh(_Symbol, PERIOD_D1, 0);
+        double sessionLow = iLow(_Symbol, PERIOD_D1, 0);
+        double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+        
+        // Calculate position within session range
+        double rangePosition = (currentPrice - sessionLow) / (sessionHigh - sessionLow) * 100;
+        
+        // Store for display
+        GlobalVariableSet("MP_Session_Range_Position", rangePosition);
+    }
+}
+
+void UpdatePriceMomentum(double currentPrice)
+{
+    static double priceHistory[20];
+    static int momentumIndex = 0;
+    
+    // Store price in circular buffer
+    priceHistory[momentumIndex] = currentPrice;
+    momentumIndex = (momentumIndex + 1) % 20;
+    
+    // Calculate momentum (simple slope of recent prices)
+    double momentum = (priceHistory[(momentumIndex + 19) % 20] - priceHistory[momentumIndex]) / 19;
+    GlobalVariableSet("MP_Price_Momentum", momentum);
+}
+
+void AnalyzePriceJump(double newPrice, double oldPrice)
+{
+    double jumpSize = MathAbs(newPrice - oldPrice);
+    string direction = (newPrice > oldPrice) ? "UP" : "DOWN";
+    
+    Print("📈 Significant Price Jump: ", direction, " ", DoubleToString(jumpSize / _Point, 0), " points");
+    
+    // Could trigger additional analysis here
+    if(jumpSize > iATR(_Symbol, PERIOD_M5, 14, 1) * 2)
+    {
+        Comment("🚨 Large Price Movement: ", direction, " ", DoubleToString(jumpSize / _Point, 0), " points");
+    }
+}
+
+void OnNewBar()
+{
+    Print("🕐 New Bar: ", TimeToString(TimeCurrent(), TIME_MINUTES));
+    
+    // Perform new bar analytics
+    CalculateBarAnalytics();
+    UpdateSessionStatistics();
+    
+    // Reset some real-time counters if needed
+    ResetTickCounters();
+}
+
+void CalculateBarAnalytics()
+{
+    // Analyze the completed bar
+    double open = iOpen(_Symbol, PERIOD_CURRENT, 1);
+    double high = iHigh(_Symbol, PERIOD_CURRENT, 1);
+    double low = iLow(_Symbol, PERIOD_CURRENT, 1);
+    double close = iClose(_Symbol, PERIOD_CURRENT, 1);
+    long volume = iVolume(_Symbol, PERIOD_CURRENT, 1);
+    
+    // Calculate bar characteristics
+    double bodySize = MathAbs(close - open);
+    double totalRange = high - low;
+    double bodyRatio = (totalRange > 0) ? bodySize / totalRange : 0;
+    
+    // Store analytics
+    GlobalVariableSet("MP_Last_Bar_Body_Ratio", bodyRatio);
+    GlobalVariableSet("MP_Last_Bar_Volume", volume);
+}
+
+void UpdateSessionStatistics()
+{
+    // Update session-based statistics
+    // This integrates with the main Market Profile session logic
+}
+
+void ResetTickCounters()
+{
+    // Reset any tick-based counters at the start of new bars
+}
+
+void UpdateVisualElements()
+{
+    // Update any visual indicators or overlays
+    // This would integrate with the main Market Profile display
+}
+
+void RefreshAnalyticsPanel()
+{
+    // Update analytics information panel
+    string info = StringFormat("POC: %.5f | Regime: %s | Momentum: %.2f", 
+                              GlobalVariableGet("MP_Dynamic_POC"),
+                              EnumToString(AnalyzeMarketRegime()),
+                              GlobalVariableGet("MP_Price_Momentum"));
+    
+    Comment(info);
 } 
