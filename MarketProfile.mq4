@@ -400,6 +400,7 @@ int OnInit()
         else
         {
             string s = DoubleToString(quote, _Digits);
+            StringReplace(s, "-", "");
             int total_digits = StringLen(s);
             // If there is a dot in a quote.
             if (StringFind(s, ".") != -1) total_digits--; // Decrease the count of digits by one.
