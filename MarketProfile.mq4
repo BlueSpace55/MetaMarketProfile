@@ -463,6 +463,20 @@ int OnInit()
     SetIndexBuffer(5, DevelopingVAL_2);
     PlotIndexSetDouble(5, PLOT_EMPTY_VALUE, EMPTY_VALUE);
 
+    // Hide developing plots if features are disabled
+    if (!EnableDevelopingPOC)
+    {
+        SetIndexStyle(0, DRAW_NONE);
+        SetIndexStyle(1, DRAW_NONE);
+    }
+    if (!EnableDevelopingVAHVAL)
+    {
+        SetIndexStyle(2, DRAW_NONE);
+        SetIndexStyle(3, DRAW_NONE);
+        SetIndexStyle(4, DRAW_NONE);
+        SetIndexStyle(5, DRAW_NONE);
+    }
+
     ValueAreaPercentage_double = ValueAreaPercentage * 0.01;
 
     // Initialization successful
