@@ -307,6 +307,18 @@ bool ShouldThrottleRedraw()
 	return false;
 }
 
+double GetEffectiveTickSize()
+{
+	double ts = MarketInfo(Symbol(), MODE_TICKSIZE);
+	if (ts <= 0) return _Point;
+	return ts;
+}
+
+void UpdateTimerNow()
+{
+	Timer = (int)TimeLocal();
+}
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
@@ -418,7 +430,7 @@ int OnInit()
     onetick = NormalizeDouble(_Point * PointMultiplier_calculated, DigitsM);
 
     // Adjust for TickSize granularity if needed.
-    double TickSize = MarketInfo(Symbol(), MODE_TICKSIZE);
+    double TickSize = GetEffectiveTickSize();
     if (onetick < TickSize)
     {
         DigitsM = _Digits - (StringLen(IntegerToString((int)MathRound(TickSize / _Point))) - 1);
@@ -548,7 +560,7 @@ int OnCalculate(const int rates_total,
     if (Session == Rectangle) // Everything becomes very simple if rectangle sessions are used.
     {
         CheckRectangles();
-        Timer = (int)TimeLocal();
+        UpdateTimerNow();
         return rates_total;
     }
 
@@ -636,7 +648,7 @@ int OnCalculate(const int rates_total,
 
     FirstRunDone = true;
 
-    Timer = (int)TimeLocal();
+    UpdateTimerNow();
 
     return rates_total;
 }
