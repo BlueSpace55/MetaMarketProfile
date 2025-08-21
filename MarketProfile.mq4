@@ -298,6 +298,15 @@ uint LastRecalculationTime = 0;
 
 double DevelopingPOC_1[], DevelopingPOC_2[], DevelopingVAH_1[], DevelopingVAH_2[], DevelopingVAL_1[], DevelopingVAL_2[]; // Indicator buffers for Developing POC and VAH/VAL.
 
+bool ShouldThrottleRedraw()
+{
+	if ((ThrottleRedraw > 0) && (Timer > 0))
+	{
+		if ((int)TimeLocal() - Timer < ThrottleRedraw) return true;
+	}
+	return false;
+}
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
@@ -532,10 +541,7 @@ int OnCalculate(const int rates_total,
     if ((FirstRunDone) && (StartDate != Time[0])) return rates_total;
 
     // Delay the update of Market Profile if ThrottleRedraw is given.
-    if ((ThrottleRedraw > 0) && (Timer > 0))
-    {
-        if ((int)TimeLocal() - Timer < ThrottleRedraw) return rates_total;
-    }
+    if (ShouldThrottleRedraw()) return rates_total;
 
     // Calculate rectangle.
     if (Session == Rectangle) // Everything becomes very simple if rectangle sessions are used.
