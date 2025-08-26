@@ -1,10 +1,6 @@
-[![Support Ukraine Badge](https://bit.ly/support-ukraine-now)](https://github.com/support-ukraine/support-ukraine)
-
 # Market Profile
 
-Market Profile indicator for MT4, MT5, and cTrader by EarnForex.com.
-
-Market Profile shows where the price has spent more time, highlighting important levels that can be used in trading.
+Market Profile is a proven trading tool that reveals where the market has spent the most time and volume, helping traders identify critical price levels that drive the market. This indicator highlights key zones like Point of Control (POC), Value Area High/Low (VAH/VAL), and supports advanced trading decisions.
 
 ![Market Profile - example on intraday sessions of GBP/USD](<https://github.com/EarnForex/MarketProfile/blob/master/README%20Images/Market%20Profile%20(Intraday).png>)
 
@@ -128,13 +124,6 @@ https://www.earnforex.com/blog/metatrader-indicators-user-tutorial/
 - Performance analytics
 - Strategy backtesting
 
-## Contributing & Support
-
-Contributions in form of discussions and pull requests are welcome!
-
-**GitHub Repository**: https://github.com/EarnForex/MarketProfile
-**Documentation**: https://www.earnforex.com/metatrader-indicators/MarketProfile/
-**Community**: https://www.earnforex.com/forex-forum/
 
 ---
 
